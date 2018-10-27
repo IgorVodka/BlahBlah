@@ -89,7 +89,7 @@ public class Main {
             }
         }
         if (bestAnswer != null) {
-            String shortBestAnswer = typeLeastRequiredLetters(bestAnswer.options ,bestAnswer.answer);
+            String shortBestAnswer = typeLeastRequiredLetters(bestAnswer.options, bestAnswer.answer);
             return new FoundAnswer(
                 bestAnswer,
                 shortBestAnswer
