@@ -2,21 +2,22 @@ package com.company;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
+import javafx.util.Pair;
 import net.sourceforge.tess4j.ITesseract;
 import net.sourceforge.tess4j.Tesseract;
-import net.sourceforge.tess4j.Tesseract1;
+import net.sourceforge.tess4j.TesseractException;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.RasterFormatException;
-import java.io.*;
-import java.net.URL;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.util.*;
 import java.util.List;
 
 public class Main {
 
-    private Image makeScreenshotBetween(Point loc1, Point loc2) throws java.awt.image.RasterFormatException {
+    private static Image makeScreenshotBetween(Point loc1, Point loc2) throws java.awt.image.RasterFormatException {
         BufferedImage image = null;
         try {
             image = new Robot().createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
@@ -39,11 +40,11 @@ public class Main {
         }
     }
 
-    private Point getMousePosition() {
+    private static Point getMousePosition() {
         return MouseInfo.getPointerInfo().getLocation();
     }
 
-    public BufferedImage toBufferedImage(Image img)
+    public static BufferedImage toBufferedImage(Image img)
     {
         if (img instanceof BufferedImage)
         {
@@ -66,15 +67,12 @@ public class Main {
         return bimage;
     }
 
-    private Answer[] loadAnswers() throws FileNotFoundException {
+    private static Answer[] loadAnswers() throws FileNotFoundException {
         Gson gson = new Gson();
-        ClassLoader loader = getClass().getClassLoader();
-        InputStream is = loader.getResourceAsStream("answers.json");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        return gson.fromJson(new JsonReader(reader), Answer[].class);
+        return gson.fromJson(new JsonReader(new FileReader("answers.json")), Answer[].class);
     }
 
-    private FoundAnswer tryToFindAnyQuestionAnswer(Answer[] answers, String text) {
+    private static Pair<Answer, String> tryToFindAnyQuestionAnswer(Answer[] answers, String text) {
         Set<String> textWords = new HashSet<String>(Arrays.asList(text.split(" ")));
         int maxIntersection = 0;
         Answer bestAnswer = null;
@@ -90,16 +88,16 @@ public class Main {
         }
         if (bestAnswer != null) {
             String shortBestAnswer = typeLeastRequiredLetters(bestAnswer.options ,bestAnswer.answer);
-            return new FoundAnswer(
+            return new Pair<Answer, String>(
                 bestAnswer,
                 shortBestAnswer
             );
         } else {
-            return new FoundAnswer(null, text + "?");
+            return new Pair<Answer, String>(null, text + "?");
         }
     }
 
-    private String typeLeastRequiredLetters(List<String> options, String correct) {
+    private static String typeLeastRequiredLetters(List<String> options, String correct) {
         StringBuilder sb = new StringBuilder();
         for(int i = 0; i < correct.length(); i++) {
             sb.append(correct.charAt(i));
@@ -119,7 +117,7 @@ public class Main {
         return sb.toString();
     }
 
-    public void run() {
+    public static void main(String[] args) {
         final HintWindow window = new HintWindow();
         window.createWindow();
 
@@ -129,8 +127,8 @@ public class Main {
         final int anHour = 60 * min;
 
         final ITesseract instance = new Tesseract();  // JNA Interface Mapping
-        instance.setDatapath(".");
-        instance.setLanguage("RUS");
+        instance.setDatapath("tessdata"); // path to tessdata directory
+        instance.setLanguage("rus");
 
         final Runnable runner = new Runnable() {
             public void run() {
@@ -151,9 +149,9 @@ public class Main {
                         Image image = makeScreenshotBetween(pos1, pos2);
                         if (image != null) {
                             String parsedText = instance.doOCR(toBufferedImage(image)).toLowerCase();
-                            FoundAnswer result = tryToFindAnyQuestionAnswer(answers, parsedText);
-                            if (result.answer != null) {
-                                window.setHint(result.shortAnswer, result.answer.answer);
+                            Pair<Answer, String> result = tryToFindAnyQuestionAnswer(answers, parsedText);
+                            if (result.getKey() != null) {
+                                window.setHint(result.getValue(), result.getKey().answer);
                                 window.setStatus(HintWindow.HintWindowStatus.RESULT);
                             } else {
                                 window.setHint("?", "?");
@@ -191,10 +189,5 @@ public class Main {
         });
 
         watchingThread.start();
-    }
-
-    public static void main(String[] args) {
-        Main m = new Main();
-        m.run();
     }
 }
