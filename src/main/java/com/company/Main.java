@@ -128,7 +128,7 @@ public class Main {
 
         final ITesseract instance = new Tesseract();  // JNA Interface Mapping
         instance.setDatapath("tessdata"); // path to tessdata directory
-        instance.setLanguage("RUS");
+        instance.setLanguage("rus");
 
         final Runnable runner = new Runnable() {
             public void run() {
