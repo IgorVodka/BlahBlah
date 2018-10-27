@@ -66,7 +66,7 @@ public class Main {
         return bimage;
     }
 
-    private Answer[] loadAnswers() throws FileNotFoundException {
+    private Answer[] loadAnswers() {
         Gson gson = new Gson();
         ClassLoader loader = getClass().getClassLoader();
         InputStream is = loader.getResourceAsStream("answers.json");
@@ -128,9 +128,9 @@ public class Main {
         final int min = 60000;
         final int anHour = 60 * min;
 
-        final ITesseract instance = new Tesseract1();  // JNA Interface Mapping
-        instance.setDatapath(".");
-        instance.setLanguage("rus");
+        final ITesseract instance = new Tesseract();  // JNA Interface Mapping
+        instance.setDatapath("./tessdata");
+        instance.setLanguage("eng");
 
         final Runnable runner = new Runnable() {
             public void run() {
